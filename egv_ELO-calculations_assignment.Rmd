@@ -1,0 +1,113 @@
+---
+title: "Chess ELO Calculations"
+author: "Escarlet Gabriel Vicente"
+date: "2025-09-28"
+output: html_document
+---
+
+## Introduction
+This assignment extends the chess tournament dataset from Project 1 by calculating each player’s expected score using the Elo rating system. The expected score represents the probability of a player winning or drawing against opponents, based on rating differences.
+
+Since my Project 1 table only contains each player’s average opponent rating, I approximate their Elo expectation by treating all seven rounds as if they were played against an opponent of that average strength.
+
+I then compare each player’s expected score to their actual score, identifying the five players who most overperformed and the five who most underperformed relative to expectations.
+
+The Elo formula I use is taken from Wikipedia — Elo rating system (Mathematical details).
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+library(dplyr)
+library(readr)
+library(knitr)
+```
+
+# 1. Load Data
+The dataset from Project 1 is loaded below, showing the first few rows of player information.
+```{r loading_data}
+chess_players <- read_csv("chess_players.csv")
+head(chess_players)
+```
+---
+
+## 2. Elo Formula  
+
+The Elo expected score per game is defined as:  
+
+\[
+E = \frac{1}{1 + 10^{(R_{opp} - R_{player})/400}}
+\]
+
+where:  
+- \(R_{player}\) = the player’s rating,  
+- \(R_{opp}\) = the opponent’s rating.  
+
+Since the tournament had **7 rounds**, I approximate each player’s total expected score as:  
+
+\[
+E_{total} = 7 \times \frac{1}{1 + 10^{(\text{AvgOpponent} - \text{PreRating})/400}}
+\]
+
+The R code below applies this formula to compute each player’s expected score and the difference between actual and expected results.
+
+---
+
+```{r elo-formula}
+expected_prob <- function(Rp, Ro) {
+  1 / (1 + 10 ^ ((Ro - Rp) / 400))
+}
+
+elo_results <- chess_players %>%
+  mutate(
+    ExpScore = 7 * expected_prob(PreRating, AvgOpponent),
+    Diff     = Points - ExpScore
+  )
+```
+  
+---
+
+## 3. Results
+The table below shows the first ten players with their actual points, expected score, and difference.
+
+```{r results}
+elo_results %>%
+  select(Name, State, PreRating, Points, AvgOpponent, ExpScore, Diff) %>%
+  head(10) %>%
+  kable(caption = "Preview of Elo Results (first 10 players)")
+```
+
+Next, I identify the five players who most **overperformed** relative to their expected score.
+```{r overperformers}
+top_over <- elo_results %>%
+  arrange(desc(Diff)) %>%
+  select(Name, PreRating, Points, ExpScore, Diff) %>%
+  mutate(ExpScore = round(ExpScore, 2), Diff = round(Diff, 2)) %>%
+  head(5)
+
+kable(top_over, caption = "Top 5 Overperformers (Actual − Expected)")
+```
+
+Finally, I identify the five players who most **underperformed** relative to their expected score.
+```{r underperformers}
+top_under <- elo_results %>%
+  arrange(Diff) %>%
+  select(Name, PreRating, Points, ExpScore, Diff) %>%
+  mutate(ExpScore = round(ExpScore, 2), Diff = round(Diff, 2)) %>%
+  head(5)
+
+kable(top_under, caption = "Top 5 Underperformers (Actual − Expected)")
+```
+---
+
+## 4. Conclusion
+Using the Elo expected-score formula, I estimated each player’s expected points based on their pre-rating compared to the average rating of their opponents. By comparing expected scores to actual tournament results, I identified the five players who most overperformed and the five who most underperformed relative to expectations.
+
+This analysis illustrates how Elo ratings can be applied not only for ranking players but also for evaluating tournament performance. As described in Wikipedia’s Elo rating system, expected scores reflect the probability of winning or drawing against an opponent, and differences between actual and expected outcomes highlight players who performed above or below their rating-based predictions.
+
+While small variations may occur across implementations, the results consistently reveal which players exceeded expectations and which fell short. These findings confirm the Elo system’s usefulness for benchmarking performance in real tournaments.
+
+---
+
+## 5. Reference  
+- [Wikipedia. *Elo rating system*](https://en.wikipedia.org/wiki/Elo_rating_system)
+
+---
