@@ -1,0 +1,113 @@
+---
+title: "Tidying and Transforming Data"
+author: "Escarlet Gabriel Vicente"
+date: "2025-09-28"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+```
+
+## 1. Introduction
+
+In this assignment, I worked with flight delay data for two airlines across five cities.
+The goal was to tidy the dataset, transform it into long format, and compare on-time vs delayed flights both overall and by city.
+
+---
+
+## 2. Load Libraries
+
+I started by loading the `tidyverse` package, which includes the tools for data manipulation and visualization.
+
+```{r libraries}
+library(tidyverse)
+```
+
+## 3. Create the Dataset
+
+The assignment provided data in a table. Since I only had the raw numbers, I created the dataset manually in R.
+
+```{r create_dataset}
+delays <- data.frame(
+  Airline = c("ALASKA", "ALASKA", "AM WEST", "AM WEST"),
+  Status = c("on time", "delayed", "on time", "delayed"),
+  Los.Angeles = c(497, 62, 694, 117),
+  Phoenix = c(221, 12, 4840, 415),
+  San.Diego = c(212, 20, 383, 65),
+  San.Francisco = c(503, 102, 320, 129),
+  Seattle = c(1841, 305, 201, 61)
+)
+
+delays
+```
+
+
+## 4. Check for Missing Data
+
+I verified whether there were missing values in the dataset. Since there were none, no imputation was needed.
+
+```{r verification}
+sum(is.na(delays))
+```
+
+## 5. Transform Data
+
+To make analysis easier, I reshaped the dataset into long format using pivot_longer().
+
+```{r transformation}
+delays_long <- delays %>%
+  pivot_longer(cols = -c(Airline, Status),
+               names_to = "City",
+               values_to = "Count")
+
+delays_long
+```
+
+## 6. Overall Percentages
+
+Next, I calculated the overall percentages of on-time vs delayed flights for each airline.
+
+```{r percentages}
+overall <- delays_long %>%
+group_by(Airline, Status) %>%
+summarise(Total = sum(Count), .groups = "drop") %>%
+group_by(Airline) %>%
+mutate(Percent = round(100 * Total / sum(Total), 1))
+
+overall
+```
+
+**Observation:**
+The overall percentages indicate that Alaska experiences a higher proportion of delays (13.3%) compared to AM West (10.9%). Based on these totals alone, Alaska appears to perform worse overall.
+
+## 7. Percentages by City
+
+I then compared percentages of delays across the five cities.
+```{r comparison}
+by_city <- delays_long %>%
+group_by(Airline, City, Status) %>%
+summarise(Total = sum(Count), .groups = "drop") %>%
+group_by(Airline, City) %>%
+mutate(Percent = round(100 * Total / sum(Total), 1))
+
+by_city
+```
+
+**Observation:**
+When the data is broken down by city, AM West has a higher delay percentage in every single city.
+
+## 8. Analysis of Discrepancy
+
+The contrast between the city-by-city results and the overall totals reveals a clear example of Simpson’s paradox.
+
+**City-by-city:** AM West performs worse in every city.
+
+**Overall:** Alaska appears worse.
+This happens because AM West has an extremely large number of flights in Phoenix, and Phoenix has a relatively low delay percentage. Because Phoenix dominates the total number of flights, it pulls AM West’s overall delay percentage down, even though AM West is worse in each individual city.
+
+## 9. Conclusion
+
+Through this analysis, I tidied the dataset, reshaped it into long format, and compared delay rates across both airlines and cities. The key insight is that AM West performs worse in every city, yet Alaska appears worse overall due to Simpson’s paradox. This demonstrates the importance of examining both aggregated and disaggregated data to avoid misleading conclusions.
