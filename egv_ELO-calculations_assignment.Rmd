@@ -2,7 +2,9 @@
 title: "Chess ELO Calculations"
 author: "Escarlet Gabriel Vicente"
 date: "2025-09-28"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ## Introduction
@@ -24,7 +26,7 @@ library(knitr)
 # 1. Load Data
 The dataset from Project 1 is loaded below, showing the first few rows of player information.
 ```{r loading_data}
-chess_players <- read_csv("chess_players.csv")
+chess_players <- read_csv("https://raw.githubusercontent.com/egabrielvice/assignments/main/chess_players.csv")
 head(chess_players)
 ```
 ---
@@ -103,7 +105,7 @@ Using the Elo expected-score formula, I estimated each player’s expected point
 
 This analysis illustrates how Elo ratings can be applied not only for ranking players but also for evaluating tournament performance. As described in Wikipedia’s Elo rating system, expected scores reflect the probability of winning or drawing against an opponent, and differences between actual and expected outcomes highlight players who performed above or below their rating-based predictions.
 
-While small variations may occur across implementations, the results consistently reveal which players exceeded expectations and which fell short. These findings confirm the Elo system’s usefulness for benchmarking performance in real tournaments.
+While minor differences exist across Elo implementations, the results consistently reveal which players exceeded expectations and which underperformed. Overall, this confirms the usefulness of the Elo system for benchmarking tournament performance.
 
 ---
 
